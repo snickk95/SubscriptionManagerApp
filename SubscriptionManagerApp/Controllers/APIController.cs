@@ -102,7 +102,6 @@ namespace SubscriptionManagerApp.Controllers
         [HttpPost("/user")]
         public async Task<IActionResult> AddNewUser([FromBody] User UserInfo)
         {
-           
             User user = new User()
             {
               FirstName = UserInfo.FirstName,
@@ -119,14 +118,17 @@ namespace SubscriptionManagerApp.Controllers
         [HttpPost("/sub/{id}")]
         public async Task<IActionResult> AddNewSub([FromBody] Subscription SubInfo, int UserId)
         {
-           
-            //create sub serviceto add to the user list of subs
-           Subscription subToAdd = new Subscription()
-           {
-               SubscriptionId = SubInfo.SubscriptionId,
-               ServiceName = SubInfo.ServiceName,
-               Price = SubInfo.Price
-           };
+            //find the subscription based on the subscription id in the json
+            Subscription? subToAdd =await _SubManagerDbContext.Subscriptions 
+             .Where(s=>s.SubscriptionId == SubInfo.SubscriptionId)
+                .Select(s=> new Subscription()
+            {
+                SubscriptionId = s.SubscriptionId,
+                ServiceName = s.ServiceName,
+                Price = s.Price
+            }).FirstOrDefaultAsync();
+
+            if (subToAdd == null) { return NotFound("the subscription requested to add couild not be found"); }
 
             //find the user based on the user id
             User? user = await _SubManagerDbContext.Users.Where(u => u.UserId == UserId)
@@ -135,7 +137,8 @@ namespace SubscriptionManagerApp.Controllers
                     UserId = u.UserId,
                     FirstName = u.FirstName,
                     LastName = u.LastName,
-                    Email = u.Email
+                    Email = u.Email,
+                   
                 }
             ).FirstOrDefaultAsync();
 

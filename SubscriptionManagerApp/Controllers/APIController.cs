@@ -4,7 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using SubscriptionManagerApp.Entities;
 using SubscriptionManagerApp.Messages;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SubscriptionManagerApp.Controllers
@@ -23,19 +25,76 @@ namespace SubscriptionManagerApp.Controllers
         [HttpGet("/user/{email}")]
         public async Task<IActionResult> GetUser(string email)
         {
-          
+
+          List<User> user = await _SubManagerDbContext.Users.Where(u => u.Email == email)
+                .Include(u=>u.Subs)
+                .Select(u=>new User()
+                {
+                    UserId = u.UserId,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Email = u.Email,
+                    Subs = u.Subs
+                }
+            ).ToListAsync();
+
+            UserDTO userDTO = new UserDTO()
+            {
+                UserLst = user
+            };
+
+            return Ok(userDTO);
         }
 
         
         [HttpGet("/subs")]
         public async Task<IActionResult> GetAllSubs()
         {
-           
+            List<Subscription> sub = await _SubManagerDbContext.Subscriptions
+                 .Select(s => new Subscription()
+                 {
+                     SubscriptionId = s.SubscriptionId,
+                     ServiceName = s.ServiceName,
+                     Price = s.Price
+                 }
+             ).ToListAsync();
+
+
+            SubscriptionDTO subDTO = new SubscriptionDTO()
+            {
+                SubLst = sub
+            };
+
+            return Ok(subDTO);
         }
 
+        //get all subscriptions of a user
         [HttpGet("/subs/{id}")]
-        public async Task<IActionResult> GetSubsOfUser(int Userid)
+        public async Task<IActionResult> GetSubsOfUser(int id)
         {
+            User user = await _SubManagerDbContext.Users.Where(u => u.UserId == id)
+                .Include(u => u.Subs)
+                .Select(u => new User()
+                {
+                    UserId = u.UserId,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Email = u.Email,
+                    Subs = u.Subs
+                }
+            ).FirstOrDefaultAsync();
+
+            if (user == null) { return NotFound("the user could not be found"); }
+
+            //save to subscription list
+            List<Subscription> returnSubs = user.Subs.ToList();
+            
+            SubscriptionDTO subDTO = new SubscriptionDTO()
+            {
+                SubLst = returnSubs
+            };
+
+            return Ok(subDTO);
 
         }
 
@@ -43,14 +102,23 @@ namespace SubscriptionManagerApp.Controllers
         [HttpPost("/user")]
         public async Task<IActionResult> AddNewUser([FromBody] User UserInfo)
         {
+            User user = new User()
+            {
+              FirstName = UserInfo.FirstName,
+              LastName = UserInfo.LastName,
+              Email = UserInfo.Email,
+            };
 
+            _SubManagerDbContext.Add(user);
+            _SubManagerDbContext.SaveChanges();
+            return Ok(user);
 
         }
 
-        [HttpPost("/sub/{id}")]
-        public async Task<IActionResult> AddNewSub([FromBody] Subscription SubInfo, int UserId)
-        {
+        //[HttpPost("/sub/{id}")]
+        //public async Task<IActionResult> AddNewSub([FromBody] Subscription SubInfo, int UserId)
+        //{
 
-        }
+        //}
     }
 }

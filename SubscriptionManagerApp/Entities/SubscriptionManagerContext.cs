@@ -61,7 +61,7 @@ public partial class SubscriptionManagerContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("last_name");
 
-            entity.HasMany(d => d.Subscriptions).WithMany(p => p.Users)
+            entity.HasMany(d => d.Subs).WithMany(p => p.Users)
                 .UsingEntity<Dictionary<string, object>>(
                     "UserSubscription",
                     r => r.HasOne<Subscription>().WithMany()

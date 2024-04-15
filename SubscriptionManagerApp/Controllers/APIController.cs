@@ -72,7 +72,7 @@ namespace SubscriptionManagerApp.Controllers
         [HttpGet("/subs/{id}")]
         public async Task<IActionResult> GetSubsOfUser(int id)
         {
-            User user = await _SubManagerDbContext.Users.Where(u => u.UserId == id)
+            User? user = await _SubManagerDbContext.Users.Where(u => u.UserId == id)
                 .Include(u => u.Subs)
                 .Select(u => new User()
                 {
@@ -102,6 +102,7 @@ namespace SubscriptionManagerApp.Controllers
         [HttpPost("/user")]
         public async Task<IActionResult> AddNewUser([FromBody] User UserInfo)
         {
+           
             User user = new User()
             {
               FirstName = UserInfo.FirstName,
@@ -115,10 +116,39 @@ namespace SubscriptionManagerApp.Controllers
 
         }
 
-        //[HttpPost("/sub/{id}")]
-        //public async Task<IActionResult> AddNewSub([FromBody] Subscription SubInfo, int UserId)
-        //{
+        [HttpPost("/sub/{id}")]
+        public async Task<IActionResult> AddNewSub([FromBody] Subscription SubInfo, int UserId)
+        {
+           
+            //create sub serviceto add to the user list of subs
+           Subscription subToAdd = new Subscription()
+           {
+               SubscriptionId = SubInfo.SubscriptionId,
+               ServiceName = SubInfo.ServiceName,
+               Price = SubInfo.Price
+           };
 
-        //}
+            //find the user based on the user id
+            User? user = await _SubManagerDbContext.Users.Where(u => u.UserId == UserId)
+                .Select(u => new User()
+                {
+                    UserId = u.UserId,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Email = u.Email
+                }
+            ).FirstOrDefaultAsync();
+
+            if (user == null) { return NotFound("the user could not be found"); }
+
+            //add the sub to the user
+            user.Subs.Add(subToAdd);
+
+            _SubManagerDbContext.Update(user);
+            _SubManagerDbContext.SaveChanges();
+
+            return Ok("subscription has been added successfully!");
+
+        }
     }
 }

@@ -11,5 +11,5 @@ public partial class Subscription
 
     public decimal? Price { get; set; }
 
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
+    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
 }

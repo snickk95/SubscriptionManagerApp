@@ -111,7 +111,7 @@
     });
 
     $('#addSubBtn').click(async function () {
-        var newUrl = _subsUrl + '/' + 1;
+        var newUrl = _subsUrl + '/' + 2;
         var subId = document.getElementById('subSelect').value;
 
         console.log(subId);
@@ -131,10 +131,15 @@
             body: JSON.stringify(newSub)
         });
 
-        if (response.status === 201) {
+        if (response.status === 200) {
             _newSubMsg.attr('class', 'text-success');
             _newSubMsg.text('Quote was added successfully.');
-        } else {
+        }
+        else if (response.status === 400) {
+            _errorMsg.attr('class', 'text-danger');
+            _errorMsg.text('You have already added this subscription.');
+        }
+        else {
             _errorMsg.attr('class', 'text-danger');
             _errorMsg.text('Hmmm, there was a problem adding the new subscription.');
         }

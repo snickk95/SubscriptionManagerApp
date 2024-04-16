@@ -21,7 +21,23 @@ namespace SubscriptionManagerApp.Controllers
             _SubManagerDbContext = SubManagerDbContext;
         }
 
-       
+        [HttpGet("/subs-api")]
+        public async Task<IActionResult> GetSubsApiHome()
+        {
+            SubsApiHomeDTO apiHomeViewModel = new SubsApiHomeDTO()
+            {
+                Links = new Dictionary<string, Link>() {
+                    {"self" , new Link(GenerateFullUrl("/subs-api"), "self", "GET") },
+                    {"subs", new Link(GenerateFullUrl("/subs"), "subs", "GET") },
+                    {"user", new Link(GenerateFullUrl("/user"), "user", "GET") },
+                },
+                ApiVersion = "1.0",
+                Creator = "Group 4"
+            };
+
+            return Ok(apiHomeViewModel);
+        }
+
         [HttpGet("/user/{email}")]
         public async Task<IActionResult> GetUser(string email)
         {
@@ -115,9 +131,10 @@ namespace SubscriptionManagerApp.Controllers
 
         }
 
-        [HttpPost("/sub/{id}")]
+        [HttpPost("/subs/{UserId}")]
         public async Task<IActionResult> AddNewSub([FromBody] Subscription SubInfo, int UserId)
         {
+            Console.WriteLine(UserId);
             //find the subscription based on the subscription id in the json
             Subscription? subToAdd =await _SubManagerDbContext.Subscriptions 
              .Where(s=>s.SubscriptionId == SubInfo.SubscriptionId)
@@ -129,6 +146,8 @@ namespace SubscriptionManagerApp.Controllers
             }).FirstOrDefaultAsync();
 
             if (subToAdd == null) { return NotFound("the subscription requested to add couild not be found"); }
+
+            Console.WriteLine(subToAdd.SubscriptionId + " " + subToAdd.ServiceName + " " + subToAdd.Price);
 
             //find the user based on the user id
             User? user = await _SubManagerDbContext.Users.Where(u => u.UserId == UserId)
@@ -144,14 +163,21 @@ namespace SubscriptionManagerApp.Controllers
 
             if (user == null) { return NotFound("the user could not be found"); }
 
+            Console.WriteLine(user.UserId + " " + user.FirstName + " " + user.LastName + " " + user.Email);
+
             //add the sub to the user
             user.Subs.Add(subToAdd);
 
             _SubManagerDbContext.Update(user);
             _SubManagerDbContext.SaveChanges();
 
-            return Ok("subscription has been added successfully!");
+            return Ok(subToAdd);
 
+        }
+
+        private string GenerateFullUrl(string path)
+        {
+            return $"{Request.Scheme}://{Request.Host}{path}";
         }
     }
 }

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Azure.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SubscriptionManagerApp.Messages;
 
 namespace SubscriptionManagerApp.Entities;
 
@@ -81,8 +84,34 @@ public partial class SubscriptionManagerContext : DbContext
                     });
         });
 
+
         OnModelCreatingPartial(modelBuilder);
     }
 
+    public static async Task CreateUsers(IServiceProvider serviceProvider, string username)
+    {
+        UserManager<IdUser> userManager = serviceProvider.GetRequiredService<UserManager<IdUser>>();
+        RoleManager<IdentityRole> roleManager = serviceProvider
+            .GetRequiredService<RoleManager<IdentityRole>>();
+        
+        string roleName = "User";
+
+        // if role doesn't exist, create it
+        if (await roleManager.FindByNameAsync(roleName) == null)
+        {
+            await roleManager.CreateAsync(new IdentityRole(roleName));
+        }
+        // if username doesn't exist, create it and add it to role
+        if (await userManager.FindByNameAsync(username) == null)
+        {
+            IdUser user = new IdUser { UserName = username };
+            var result = await userManager.CreateAsync(user);
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(user, roleName);
+            }
+        }
+
+    }
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

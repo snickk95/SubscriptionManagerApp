@@ -41,29 +41,17 @@ namespace SubscriptionManagerApp.Controllers
         [HttpGet("/user/{email}")]
         public async Task<IActionResult> GetUser(string email)
         {
+            Console.WriteLine(email);
 
-          List<User> user = await _SubManagerDbContext.Users.Where(u => u.Email == email)
-                .Include(u=>u.UserSubscriptions)
+            User user = await _SubManagerDbContext.Users
+                .Include(u => u.UserSubscriptions)
                     .ThenInclude(s => s.Subscription)
-                .Select(u=>new User()
-                {
-                    UserId = u.UserId,
-                    FirstName = u.FirstName,
-                    LastName = u.LastName,
-                    Email = u.Email,
-                    UserSubscriptions = u.UserSubscriptions.Select(u => new UserSubscription()
-                    {
-                        Subscription = u.Subscription
-                    }).ToList() 
-                })
-                .ToListAsync();
+                 .Where(u => u.Email == email)
+                .FirstOrDefaultAsync();
 
-            UserDTO userDTO = new UserDTO()
-            {
-                UserLst = user
-            };
+            Console.WriteLine(user.UserId);
 
-            return Ok(userDTO);
+            return Ok(user);
         }
 
         

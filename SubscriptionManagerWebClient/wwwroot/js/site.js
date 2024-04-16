@@ -136,7 +136,7 @@
         var newUrl = _subsUrl + '/' + 2;
         var subId = document.getElementById('subSelect').value;
 
-        console.log(subId);
+ //       console.log(subId);
 
         let newSub = {
             subscriptionId: subId,
@@ -198,28 +198,30 @@
         _loginModal.modal('show');
     });
 
-    $('#loginBtn').click(function () {
+    $('#loginBtn').click(async function () {
+        let newUrl = _userUrl + '/' + $('#loginEmail').val();
 
-        let newUrl = _userUrl + '/' + $('#loginEmail');
-
-        const response = fetch(newUrl, {        
+        const response = await fetch(newUrl, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json'
             }
         });
 
-
         if (response.status === 200) {
+            const user = await response.json();
+
             setLoginState(true);
 
             console.log(response.body);
+            _errorMsg.attr('class', 'text-success');
+            _errorMsg.text('You have successfully logged in.');
+            _errorMsg.fadeOut(10000);
 
-            _loggedInUserId = response.body.userId;
+            _loggedInUserId = user.userId;
 
             run();
-        }
-        else {
+        } else {
             loadSubs(_loggedInUserId);
             _errorMsg.attr('class', 'text-danger');
             _errorMsg.text('Hmmm, there was a problem logging you in.');

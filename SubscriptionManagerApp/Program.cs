@@ -47,4 +47,27 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+//create a list of current users to set up the suthorization service
+SubscriptionManagerContext context = new SubscriptionManagerContext();
+List<User> user = context.Users
+                .Select(u => new User()
+                {
+                    UserId = u.UserId,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Email = u.Email,
+                    Subs = u.Subs
+                }
+            ).ToList();
+//create a service for identity authorization
+var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
+//addeach current user to the service by eamail
+foreach (User u in user)
+{
+    using (var scope = scopeFactory.CreateScope())
+    {
+        await SubscriptionManagerContext.CreateUsers(scope.ServiceProvider,u.Email);
+    }
+}
+
 app.Run();

@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
@@ -69,6 +70,7 @@ namespace SubscriptionManagerApp.Controllers
         }
 
         //get all subscriptions of a user
+        [Authorize()]
         [HttpGet("/subs/{id}")]
         public async Task<IActionResult> GetSubsOfUser(int id)
         {

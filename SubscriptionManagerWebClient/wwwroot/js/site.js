@@ -9,6 +9,21 @@
     var _subsUrl = null;
     var _userUrl = null;
 
+    var _isUserLoggedIn = false;
+    var _loginLink = $('#loginLink');
+    var _loginModal = $('#loginModal').modal();
+
+    var _loggedInUserId = 0;
+
+    var setLoginState = function (isLoggedIn) {
+        _isUserLoggedIn = isLoggedIn;
+        if (isLoggedIn) {
+            _loginLink.text('Logout');
+        } else {
+            _loginLink.text('Login');
+        }
+    };
+
     var loadBaseApiInfo = async function () {
         const response = await fetch(_subsApiHomeUrl, {
             mode: 'cors',
@@ -29,8 +44,15 @@
         }
     };
 
-    var loadSubs = async function () {
-        const response = await fetch(_subsUrl, {         // get the quotes from API:
+    var loadSubs = async function (id) {
+
+        let newUrl = _subsUrl;
+
+        if (id != 0) {
+            newUrl = _subsUrl + '/' + id;
+        }
+
+        const response = await fetch(newUrl, {         // get the quotes from API:
             mode: 'cors',
             headers: {
                 'Accept': 'application/json'
@@ -71,7 +93,7 @@
         }
     }
 
-    var displaySubsSelect = function (subs) {
+    function displaySubsSelect(subs) {
 
         var selectElement = document.getElementById('subSelect');
 
@@ -79,8 +101,8 @@
 
         subs.forEach(function (sub) {
             var option = document.createElement('option');
-            option.value = sub.subscriptionId; // You need to replace 'value' with the actual property name of your subscription object
-            option.textContent = sub.serviceName; // You need to replace 'text' with the actual property name of your subscription object
+            option.value = sub.subscriptionId;
+            option.textContent = sub.serviceName; 
             selectElement.appendChild(option);
         });
     };
@@ -133,11 +155,15 @@
 
         if (response.status === 200) {
             _newSubMsg.attr('class', 'text-success');
-            _newSubMsg.text('Quote was added successfully.');
+            _newSubMsg.text('Subscription was added successfully.');
         }
         else if (response.status === 400) {
             _errorMsg.attr('class', 'text-danger');
             _errorMsg.text('You have already added this subscription.');
+        }
+        else if (response.status === 404) {
+            _errorMsg.attr('class', 'text-danger');
+            _errorMsg.text('The subscription requested could not be found.');
         }
         else {
             _errorMsg.attr('class', 'text-danger');
@@ -147,8 +173,98 @@
         _errorMsg.fadeOut(10000);
     });
 
+    //$('#registerBtn').click(async function () {
+
+    //    let newUser = {
+    //        firstName: $('#registerFName'),
+    //        lastName: $('#registerLName'),
+    //        email: $('#registerEmail')
+    //    };
+
+    //    const response = await fetch(_userUrl, {
+    //        method: 'POST',
+    //        mode: 'cors',
+    //        headers: {
+    //            'Content-Type': 'application/json'
+    //        },
+    //        body: JSON.stringify(newUser)
+    //    });
+
+    //    if (response.status === 200) {
+    //        window.location.href = '/Index.cshtml';
+    //});
+
+    $('#loginLink').click(function () {
+        _loginModal.modal('show');
+    });
+
+    $('#loginBtn').click(function () {
+
+        let newUrl = _userUrl + '/' + $('#loginEmail');
+
+        const response = fetch(newUrl, {        
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+
+        if (response.status === 200) {
+            setLoginState(true);
+
+            console.log(response.body);
+
+            _loggedInUserId = response.body.userId;
+
+            run();
+        }
+        else {
+            loadSubs(_loggedInUserId);
+            _errorMsg.attr('class', 'text-danger');
+            _errorMsg.text('Hmmm, there was a problem logging you in.');
+            _errorMsg.fadeOut(10000);
+        }
+
+
+        //loginPromise.then((response) => {
+        //    if (response.status === 200) {
+        //        return response.json();
+        //    } else {
+        //        return Promise.reject(response);
+        //    }
+        //})
+        //    .then((tokenInfo) => {
+        //        _currentAccessToken = tokenInfo.token;
+
+        //        _newTaskItemMsg.attr('class', 'text-success');
+        //        _newTaskItemMsg.text('You are logged in');
+        //        setLoginState(true);
+        //        $('#password').val('');
+
+        //        run();
+        //        _newTaskItemMsg.fadeOut(10000);
+        //    })
+        //    .catch((response) => {
+        //        console.log(`fetch API home page; resp code: ${response.status}`);
+
+        //        _newTaskItemMsg.attr('class', 'text-danger');
+        //        _newTaskItemMsg.text('Hmmm, there was a problem logging you in.');
+        //        _newTaskItemMsg.fadeOut(10000);
+        //    });
+    });
+
+    let run = function () {
+        // then setup a timer load tasks every 1 sec:
+        setInterval(function () {
+            if (_isUserLoggedIn) {
+                loadSubs(_loggedInUserId);
+            }
+        }, 1000);
+    };
+
     loadBaseApiInfo().then(() => {
-        loadSubs()
+        loadSubs(_loggedInUserId)
     });
 
 });

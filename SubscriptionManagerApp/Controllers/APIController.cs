@@ -125,7 +125,10 @@ namespace SubscriptionManagerApp.Controllers
 
             _SubManagerDbContext.Add(user);
             _SubManagerDbContext.SaveChanges();
-            return Ok(user);
+
+            var addedUser = await _SubManagerDbContext.Users.FirstOrDefaultAsync(u => u.Email == UserInfo.Email);       // Needed to get the id from the db context
+
+            return Ok(addedUser);
 
         }
 
@@ -138,7 +141,7 @@ namespace SubscriptionManagerApp.Controllers
                 .Where(s => s.SubscriptionId == SubInfo.SubscriptionId)
                 .FirstOrDefaultAsync();
 
-            if (subToAdd == null) { return NotFound("The subscription requested to add could not be found"); }
+            if (subToAdd == null) { return NotFound(); }
 
             Console.WriteLine(subToAdd.SubscriptionId + " " + subToAdd.ServiceName + " " + subToAdd.Price);
 
@@ -151,7 +154,7 @@ namespace SubscriptionManagerApp.Controllers
 
             if (user.UserSubscriptions.Any(us => us.SubscriptionId == subToAdd.SubscriptionId))
             {
-                return BadRequest("The user already has this subscription");
+                return BadRequest();
             }
 
             var newUserSubscription = new UserSubscription

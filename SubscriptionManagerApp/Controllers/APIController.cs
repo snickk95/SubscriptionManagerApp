@@ -43,16 +43,20 @@ namespace SubscriptionManagerApp.Controllers
         {
 
           List<User> user = await _SubManagerDbContext.Users.Where(u => u.Email == email)
-                .Include(u=>u.Subs)
+                .Include(u=>u.UserSubscriptions)
+                    .ThenInclude(s => s.Subscription)
                 .Select(u=>new User()
                 {
                     UserId = u.UserId,
                     FirstName = u.FirstName,
                     LastName = u.LastName,
                     Email = u.Email,
-                    Subs = u.Subs
-                }
-            ).ToListAsync();
+                    UserSubscriptions = u.UserSubscriptions.Select(u => new UserSubscription()
+                    {
+                        Subscription = u.Subscription
+                    }).ToList() 
+                })
+                .ToListAsync();
 
             UserDTO userDTO = new UserDTO()
             {
@@ -89,22 +93,16 @@ namespace SubscriptionManagerApp.Controllers
         public async Task<IActionResult> GetSubsOfUser(int id)
         {
             User? user = await _SubManagerDbContext.Users.Where(u => u.UserId == id)
-                .Include(u => u.Subs)
-                .Select(u => new User()
-                {
-                    UserId = u.UserId,
-                    FirstName = u.FirstName,
-                    LastName = u.LastName,
-                    Email = u.Email,
-                    Subs = u.Subs
-                }
-            ).FirstOrDefaultAsync();
+                .Include(u => u.UserSubscriptions)
+                    .ThenInclude(s => s.Subscription)
+                .FirstOrDefaultAsync();
 
             if (user == null) { return NotFound("the user could not be found"); }
 
-            //save to subscription list
-            List<Subscription> returnSubs = user.Subs.ToList();
-            
+            List<Subscription> returnSubs = user.UserSubscriptions
+                .Select(u => u.Subscription)
+                .ToList();
+
             SubscriptionDTO subDTO = new SubscriptionDTO()
             {
                 SubLst = returnSubs
@@ -135,45 +133,40 @@ namespace SubscriptionManagerApp.Controllers
         public async Task<IActionResult> AddNewSub([FromBody] Subscription SubInfo, int UserId)
         {
             Console.WriteLine(UserId);
-            //find the subscription based on the subscription id in the json
-            Subscription? subToAdd =await _SubManagerDbContext.Subscriptions 
-             .Where(s=>s.SubscriptionId == SubInfo.SubscriptionId)
-                .Select(s=> new Subscription()
-            {
-                SubscriptionId = s.SubscriptionId,
-                ServiceName = s.ServiceName,
-                Price = s.Price
-            }).FirstOrDefaultAsync();
 
-            if (subToAdd == null) { return NotFound("the subscription requested to add couild not be found"); }
+            Subscription? subToAdd = await _SubManagerDbContext.Subscriptions
+                .Where(s => s.SubscriptionId == SubInfo.SubscriptionId)
+                .FirstOrDefaultAsync();
+
+            if (subToAdd == null) { return NotFound("The subscription requested to add could not be found"); }
 
             Console.WriteLine(subToAdd.SubscriptionId + " " + subToAdd.ServiceName + " " + subToAdd.Price);
 
-            //find the user based on the user id
-            User? user = await _SubManagerDbContext.Users.Where(u => u.UserId == UserId)
-                .Select(u => new User()
-                {
-                    UserId = u.UserId,
-                    FirstName = u.FirstName,
-                    LastName = u.LastName,
-                    Email = u.Email,
-                   
-                }
-            ).FirstOrDefaultAsync();
+            User? user = await _SubManagerDbContext.Users
+                .FirstOrDefaultAsync(u => u.UserId == UserId);
 
-            if (user == null) { return NotFound("the user could not be found"); }
+            if (user == null) { return NotFound("The user could not be found"); }
 
             Console.WriteLine(user.UserId + " " + user.FirstName + " " + user.LastName + " " + user.Email);
 
-            //add the sub to the user
-            user.Subs.Add(subToAdd);
+            if (user.UserSubscriptions.Any(us => us.SubscriptionId == subToAdd.SubscriptionId))
+            {
+                return BadRequest("The user already has this subscription");
+            }
 
-            _SubManagerDbContext.Update(user);
-            _SubManagerDbContext.SaveChanges();
+            var newUserSubscription = new UserSubscription
+            {
+                SubscriptionId = SubInfo.SubscriptionId,
+                UserId = UserId
+            };
+
+            _SubManagerDbContext.UserSubscriptions.Add(newUserSubscription);
+
+            await _SubManagerDbContext.SaveChangesAsync();
 
             return Ok(subToAdd);
-
         }
+
 
         private string GenerateFullUrl(string path)
         {

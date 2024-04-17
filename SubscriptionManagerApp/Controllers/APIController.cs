@@ -158,6 +158,48 @@ namespace SubscriptionManagerApp.Controllers
             return Ok(subToAdd);
         }
 
+        [HttpPost("/subs")]
+        public async Task<IActionResult> CreateNewSub([FromBody] Subscription SubInfo)
+        {
+            Subscription sub = new Subscription()
+            {
+                ServiceName = SubInfo.ServiceName,
+                Price = SubInfo.Price
+            };
+
+            _SubManagerDbContext.Subscriptions.Add(sub);
+            await _SubManagerDbContext.SaveChangesAsync();
+
+            return Ok(sub);
+        }
+
+        [HttpDelete("/subs/{userId}")]
+        public async Task<IActionResult> DeleteSub(int userId, int subId)
+        {
+            Console.WriteLine("userID: " + userId + "subId: " + subId);
+            var user = await _SubManagerDbContext.Users.Include(u => u.UserSubscriptions)
+                                                       .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null)
+            {
+                // User not found, return a 404 Not Found response
+                return NotFound("User not found.");
+            }
+
+            var userSubscription = user.UserSubscriptions.FirstOrDefault(us => us.SubscriptionId == subId);
+            if (userSubscription == null)
+            {
+                // User subscription not found, return a 404 Not Found response
+                return NotFound("User subscription not found.");
+            }
+
+            _SubManagerDbContext.UserSubscriptions.Remove(userSubscription);
+            await _SubManagerDbContext.SaveChangesAsync();
+
+            // User subscription deleted successfully, return a 200 OK response
+            return Ok();
+        }
+
 
         private string GenerateFullUrl(string path)
         {

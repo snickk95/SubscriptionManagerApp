@@ -29,23 +29,12 @@
 
                     <ul class="navbar-nav">
                         <li class="nav-item">
+                            <a class="nav-link text-dark" href="#" id="registerLink">Register</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link text-dark" href="#" id="loginLink">Login</a>
                         </li>
                     </ul>
-
-                    @* <ul class="navbar-nav">
-
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" id="Register" name="Register" asp-controller="Home" asp-action="Register">Register</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" id="LogIn" name="LogIn" asp-controller="Home" asp-action="Login">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" id="LogOut" name="LogOut" hidden>Logout</a>
-                        </li>
-
-                    </ul> *@
 
                 </div>
             </div>
@@ -75,6 +64,40 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" id="loginBtn" class="btn btn-primary" data-bs-dismiss="modal">Login</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal content: -->
+    <div id="registerModal" class="modal fade" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="registerModalLabel">Please register</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="registerFName">First Name:</label>
+                            <input type="text" class="form-control" name="registerFName" id="registerFName" placeholder="Enter fist name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="registerLName">Last Name:</label>
+                            <input type="text" class="form-control" name="registerLName" id="registerLName" placeholder="Enter last name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="registerEmail">Email:</label>
+                            <input type="text" class="form-control" name="registerEmail" id="registerEmail" placeholder="Enter email address">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="registerBtn" class="btn btn-primary" data-bs-dismiss="modal">Register</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 </div>
             </div>

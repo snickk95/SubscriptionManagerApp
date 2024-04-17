@@ -41,29 +41,17 @@ namespace SubscriptionManagerApp.Controllers
         [HttpGet("/user/{email}")]
         public async Task<IActionResult> GetUser(string email)
         {
+            Console.WriteLine(email);
 
-          List<User> user = await _SubManagerDbContext.Users.Where(u => u.Email == email)
-                .Include(u=>u.UserSubscriptions)
+            User user = await _SubManagerDbContext.Users
+                .Include(u => u.UserSubscriptions)
                     .ThenInclude(s => s.Subscription)
-                .Select(u=>new User()
-                {
-                    UserId = u.UserId,
-                    FirstName = u.FirstName,
-                    LastName = u.LastName,
-                    Email = u.Email,
-                    UserSubscriptions = u.UserSubscriptions.Select(u => new UserSubscription()
-                    {
-                        Subscription = u.Subscription
-                    }).ToList() 
-                })
-                .ToListAsync();
+                 .Where(u => u.Email == email)
+                .FirstOrDefaultAsync();
 
-            UserDTO userDTO = new UserDTO()
-            {
-                UserLst = user
-            };
+            Console.WriteLine(user.UserId);
 
-            return Ok(userDTO);
+            return Ok(user);
         }
 
         
@@ -125,7 +113,10 @@ namespace SubscriptionManagerApp.Controllers
 
             _SubManagerDbContext.Add(user);
             _SubManagerDbContext.SaveChanges();
-            return Ok(user);
+
+            var addedUser = await _SubManagerDbContext.Users.FirstOrDefaultAsync(u => u.Email == UserInfo.Email);       // Needed to get the id from the db context
+
+            return Ok(addedUser);
 
         }
 
@@ -138,7 +129,7 @@ namespace SubscriptionManagerApp.Controllers
                 .Where(s => s.SubscriptionId == SubInfo.SubscriptionId)
                 .FirstOrDefaultAsync();
 
-            if (subToAdd == null) { return NotFound("The subscription requested to add could not be found"); }
+            if (subToAdd == null) { return NotFound(); }
 
             Console.WriteLine(subToAdd.SubscriptionId + " " + subToAdd.ServiceName + " " + subToAdd.Price);
 
@@ -151,7 +142,7 @@ namespace SubscriptionManagerApp.Controllers
 
             if (user.UserSubscriptions.Any(us => us.SubscriptionId == subToAdd.SubscriptionId))
             {
-                return BadRequest("The user already has this subscription");
+                return BadRequest();
             }
 
             var newUserSubscription = new UserSubscription
@@ -165,6 +156,48 @@ namespace SubscriptionManagerApp.Controllers
             await _SubManagerDbContext.SaveChangesAsync();
 
             return Ok(subToAdd);
+        }
+
+        [HttpPost("/subs")]
+        public async Task<IActionResult> CreateNewSub([FromBody] Subscription SubInfo)
+        {
+            Subscription sub = new Subscription()
+            {
+                ServiceName = SubInfo.ServiceName,
+                Price = SubInfo.Price
+            };
+
+            _SubManagerDbContext.Subscriptions.Add(sub);
+            await _SubManagerDbContext.SaveChangesAsync();
+
+            return Ok(sub);
+        }
+
+        [HttpDelete("/subs/{userId}")]
+        public async Task<IActionResult> DeleteSub(int userId, int subId)
+        {
+            Console.WriteLine("userID: " + userId + "subId: " + subId);
+            var user = await _SubManagerDbContext.Users.Include(u => u.UserSubscriptions)
+                                                       .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null)
+            {
+                // User not found, return a 404 Not Found response
+                return NotFound("User not found.");
+            }
+
+            var userSubscription = user.UserSubscriptions.FirstOrDefault(us => us.SubscriptionId == subId);
+            if (userSubscription == null)
+            {
+                // User subscription not found, return a 404 Not Found response
+                return NotFound("User subscription not found.");
+            }
+
+            _SubManagerDbContext.UserSubscriptions.Remove(userSubscription);
+            await _SubManagerDbContext.SaveChangesAsync();
+
+            // User subscription deleted successfully, return a 200 OK response
+            return Ok();
         }
 
 

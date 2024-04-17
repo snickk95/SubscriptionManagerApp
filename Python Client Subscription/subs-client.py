@@ -141,10 +141,4 @@ while is_looping:
                 user_id = input()
                 print("Please enter a Subscription to add")
                 sub_id = input()
-                pprint(post_sub_id(user_id,sub_id))
-
-
-
-
-            
-    
+                pprint(post_sub_id(user_id,sub_id))    
